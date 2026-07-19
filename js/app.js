@@ -246,7 +246,7 @@
             return `
             <div class="bar-row ${i === 0 ? "top" : ""}">
               <span class="bar-name">${t(b.name)}</span>
-              <span class="bar-track"><span class="bar-fill" style="width:${r.pct}%"></span></span>
+              <span class="bar-track"><span class="bar-fill" style="--w:${r.pct}%"></span></span>
               <span class="bar-val">${r.pct}%</span>
             </div>`;
           }).join("")}
