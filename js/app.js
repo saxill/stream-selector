@@ -33,6 +33,12 @@
       hi: "Ye ek signal hai, final faisla nahi — seniors se baat karo aur top do me chhote projects try karo.",
     },
     closeCall: { en: "Close call with", hi: "Kaanta-takkar hai" },
+    flatTitle: { en: "No clear winner yet", hi: "Abhi koi clear winner nahi" },
+    flatBody: {
+      en: "Your ratings were almost the same for everything, so every branch scored alike. Retake the round and rate boldly — 5 for \"totally me\", 1 for \"not me at all\".",
+      hi: "Tumne lagbhag har statement ko same rating di, isliye har branch ka score barabar aa gaya. Round dobara do aur khul ke rate karo — jo bilkul tum ho use 5, jo bilkul nahi use 1.",
+    },
+    retake: { en: "Retake this round", hi: "Round dobara do" },
     footer: {
       en: "Runs fully in your browser · nothing is stored or sent anywhere",
       hi: "Poora browser me chalta hai · kuch bhi store ya send nahi hota",
@@ -223,6 +229,14 @@
   function renderResult() {
     const isR1 = state.screen === "result1";
     const results = isR1 ? state.r1Scores : state.r2Scores;
+
+    // Flat scores mean the answers carried no signal — a tie-broken "winner"
+    // would just be shuffle luck, so ask for a braver retake instead.
+    const spread = results[0].pct - results[results.length - 1].pct;
+    if (spread <= 7) {
+      renderFlatResult(isR1, results);
+      return;
+    }
     const top = branchById(results[0].id);
     const second = branchById(results[1].id);
     const closeCall = results[0].pct - results[1].pct <= 5;
@@ -266,6 +280,42 @@
       document.getElementById("goR2").addEventListener("click", () => startRound2(top));
       document.getElementById("goR2b").addEventListener("click", () => startRound2(second));
     }
+    document.getElementById("restart").addEventListener("click", () => {
+      state.screen = "landing";
+      state.track = null;
+      render();
+    });
+    requestAnimationFrame(() =>
+      app.querySelectorAll(".bar-fill").forEach((el) => el.classList.add("grow"))
+    );
+  }
+
+  function renderFlatResult(isR1, results) {
+    app.innerHTML = `
+      <section class="result">
+        <p class="eyebrow">${isR1 ? t(UI.r1ResultTitle) : t(UI.r2ResultTitle)}</p>
+        <h1 class="result-title">${t(UI.flatTitle)}</h1>
+        <p class="result-desc" style="margin-top:12px">${t(UI.flatBody)}</p>
+        <figure class="chart">
+          <figcaption class="section-label">${isR1 ? t(UI.allScores) : t(UI.allScores2)}</figcaption>
+          ${results.map((r) => {
+            const b = branchById(r.id);
+            return `
+            <div class="bar-row">
+              <span class="bar-name">${t(b.name)}</span>
+              <span class="bar-track"><span class="bar-fill" style="--w:${r.pct}%"></span></span>
+              <span class="bar-val">${r.pct}%</span>
+            </div>`;
+          }).join("")}
+        </figure>
+        <div class="result-actions">
+          <button class="primary-btn" id="retake">↻ ${t(UI.retake)}</button>
+          <button class="ghost-btn" id="restart">${t(UI.startOver)}</button>
+        </div>
+      </section>`;
+    document.getElementById("retake").addEventListener("click", () =>
+      isR1 ? startRound1(state.track) : startRound2(state.major)
+    );
     document.getElementById("restart").addEventListener("click", () => {
       state.screen = "landing";
       state.track = null;
